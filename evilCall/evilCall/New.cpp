@@ -59,9 +59,31 @@ int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
 	return status;
 }
 
-int main()
+/*
+Function captures a screenshot, and saves it.
+input: The bitmaps and virtual screens needed to capture the screenshot.
+output: none.
+*/
+void captureScreenShot(Bitmap* bmp, HBITMAP hbmScreen, HDC hdcScreen, HDC hdcMemDC)
 {
 	CLSID encoderId;
+
+	// Creating the bitmap for the screen shot, and linking it to the screen.
+	hbmScreen = CreateCompatibleBitmap(hdcScreen, 1920, 1080);
+	SelectObject(hdcMemDC, hbmScreen);
+	// Copying the pixel data to the bitmap.
+	BitBlt(hdcMemDC, 0, 0, 1920, 1080, hdcScreen, 0, 0, SRCCOPY);
+
+	// Getting the class id of the image encoder.
+	GetEncoderClsid(L"image/png", &encoderId);
+
+	// Creating a new bitmap, and saving it.
+	bmp = new Bitmap(hbmScreen, (HPALETTE)0);
+	bmp->Save(L"Test3.png", &encoderId, NULL);
+}
+
+int main()
+{
 	Bitmap* bmp = NULL;
 	HBITMAP hbmScreen = NULL;
 	GdiplusStartupInput gdip = NULL;
@@ -74,19 +96,8 @@ int main()
 	// Initializing the GDI engine.
 	GdiplusStartup(&gdipToken, &gdip, NULL);
 
-	// Creating the bitmap for the screen shot, and linking it to the screen.
-	hbmScreen = CreateCompatibleBitmap(hdcScreen, 1920, 1080);
-	SelectObject(hdcMemDC, hbmScreen);
-
-	// Copying the pixel data to the bitmap.
-	BitBlt(hdcMemDC, 0, 0, 1920, 1080, hdcScreen, 0, 0, SRCCOPY);
-
-	// Getting the class id of the image encoder.
-	GetEncoderClsid(L"image/png", &encoderId);
-
-	// Creating a new bitmap, and saving it.
-	bmp = new Bitmap(hbmScreen, (HPALETTE)0);
-	bmp->Save(L"Test2.png", &encoderId, NULL);
+	// Capturing the screenshot.
+	captureScreenShot(bmp, hbmScreen, hdcScreen, hdcMemDC);
 
 	// Shutting down the gdi plus engine.
 	GdiplusShutdown(gdipToken);
