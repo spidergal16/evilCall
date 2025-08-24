@@ -7,6 +7,11 @@
 
 #define ERROR -1
 
+#define DELAY_MS 3000
+#define SCREENSHOT_NUM 3
+#define FILE_NAME_INDEX 10
+
+
 using namespace std;
 using namespace Gdiplus;
 
@@ -64,7 +69,7 @@ Function captures a screenshot, and saves it.
 input: The bitmaps and virtual screens needed to capture the screenshot.
 output: none.
 */
-void captureScreenShot(Bitmap* bmp, HBITMAP hbmScreen, HDC hdcScreen, HDC hdcMemDC)
+void captureScreenShot(Bitmap* bmp, HBITMAP hbmScreen, HDC hdcScreen, HDC hdcMemDC, wchar_t* fileName)
 {
 	CLSID encoderId;
 
@@ -79,11 +84,15 @@ void captureScreenShot(Bitmap* bmp, HBITMAP hbmScreen, HDC hdcScreen, HDC hdcMem
 
 	// Creating a new bitmap, and saving it.
 	bmp = new Bitmap(hbmScreen, (HPALETTE)0);
-	bmp->Save(L"Test3.png", &encoderId, NULL);
+	bmp->Save(fileName, &encoderId, NULL);
 }
 
 int main()
 {
+	int i = 0;
+
+	wchar_t fileName[] = L"ScreenShot0.png";
+
 	Bitmap* bmp = NULL;
 	HBITMAP hbmScreen = NULL;
 	GdiplusStartupInput gdip = NULL;
@@ -96,8 +105,16 @@ int main()
 	// Initializing the GDI engine.
 	GdiplusStartup(&gdipToken, &gdip, NULL);
 
-	// Capturing the screenshot.
-	captureScreenShot(bmp, hbmScreen, hdcScreen, hdcMemDC);
+	// Taking a number of screenshots, with delays in between.
+	for (i = 1; i <= SCREENSHOT_NUM; i++)
+	{
+		// Capturing the screenshot.
+		captureScreenShot(bmp, hbmScreen, hdcScreen, hdcMemDC, fileName);
+
+		fileName[FILE_NAME_INDEX] = i + L'0';
+
+		Sleep(DELAY_MS);
+	}
 
 	// Shutting down the gdi plus engine.
 	GdiplusShutdown(gdipToken);
