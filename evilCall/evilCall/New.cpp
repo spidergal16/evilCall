@@ -1,16 +1,24 @@
 #include <Windows.h>
 #include <iostream>
+
 #include <stdio.h>
+#include <stdlib.h>
+
 #include <gdiplus.h>
+
 #include <time.h>
+
+#include <filesystem>
+#include <fstream>
 
 #pragma comment(lib, "Gdiplus.lib")
 
 #define DELAY_MS 2000
-#define SCREENSHOT_NUM 4
+#define SCREENSHOT_NUM 12
 
 #define FILE_NAME_INDEX 10
-#define FILE_NAME_LEN 19
+
+#define DIR_PATH "C:\\Windows\\Temp\\WINDOWS-DEFENDER-LOGS"
 
 
 using namespace std;
@@ -77,6 +85,7 @@ void captureScreenShot(Bitmap* bmp, HBITMAP hbmScreen, HDC hdcScreen, HDC hdcMem
 	// Creating the bitmap for the screen shot, and linking it to the screen.
 	hbmScreen = CreateCompatibleBitmap(hdcScreen, 1920, 1080);
 	SelectObject(hdcMemDC, hbmScreen);
+
 	// Copying the pixel data to the bitmap.
 	BitBlt(hdcMemDC, 0, 0, 1920, 1080, hdcScreen, 0, 0, SRCCOPY);
 
@@ -127,18 +136,54 @@ int getCurrentDateTime(wchar_t* pFileName, size_t fileNameSize)
 	return success;
 }
 
+/*
+Function creates a directory with the file path specified.
+input: The file path of the directory.
+output: Whether or not the function was a success.
+*/
+int createDir(std::filesystem::path dirFilePath)
+{
+	int success = TRUE;
+
+	if (!exists(dirFilePath))
+	{
+		if (!std::filesystem::create_directory(dirFilePath))
+		{
+			printf("Failed to create directory!");
+			success = FALSE;
+		}
+	}
+
+	return success;
+}
+
 int main()
 {
 	int i = 0;
 
 	int functionSuccess = 0;
+	int convertSuccess = 0;
+	int fileFormatChoice = 1;
+	
+	wchar_t fileName[FILENAME_MAX] = { 0 };
+	wchar_t wideDirPath[FILENAME_MAX] = { 0 };
+	wchar_t wideAddedFileName[FILENAME_MAX] = { 0 };
+	char addedFileName[FILENAME_MAX] = { 0 };
 
-	wchar_t fileName[FILE_NAME_LEN] = { 0 };
+	size_t convertedChars;
+
+	std::filesystem::path dirPath = DIR_PATH;
 
 	Bitmap* bmp = NULL;
 	HBITMAP hbmScreen = NULL;
 	GdiplusStartupInput gdip = NULL;
 	ULONG_PTR gdipToken = NULL;
+	
+	// Creating a directory.
+	if (!createDir(dirPath))
+	{
+		return 1;
+	}
 
 	// Get context of the screen, and creating a virtual screen.
 	HDC hdcScreen = GetDC(NULL);
@@ -150,13 +195,54 @@ int main()
 	// Taking a number of screenshots, with delays in between.
 	for (i = 1; i <= SCREENSHOT_NUM; i++)
 	{
-		// Setting the name of the file to be the current date and time.
-		functionSuccess = getCurrentDateTime(fileName, sizeof(fileName) / sizeof(wchar_t));
-
-		if (functionSuccess)
+		// Screenshot names will be unique, and saved in the directory of the project.
+		if (fileFormatChoice == 0)
 		{
-			printf("Error!.");
-			return 0;
+			// Setting the name of the file to be the current date and time.
+			functionSuccess = getCurrentDateTime(fileName, sizeof(fileName) / sizeof(wchar_t));
+
+			if (functionSuccess)
+			{
+				printf("Error!.");
+				return 0;
+			}
+		}
+
+		// Screenshot names will repeat themselves, and saved in the new directory. 
+		else
+		{
+			// Converting the dir path to wide char.
+			convertSuccess = mbstowcs_s(&convertedChars, wideDirPath, FILENAME_MAX, DIR_PATH, _TRUNCATE);
+
+			if (!convertSuccess)
+			{
+				// Converting the index of the screenshot to string.
+				_itoa_s(i, addedFileName, 10);
+
+				// Converting the file name to wide string.
+				convertSuccess = mbstowcs_s(&convertedChars, wideAddedFileName, FILENAME_MAX, addedFileName, _TRUNCATE);
+
+				if (!convertSuccess)
+				{
+					// Getting the full path and name of the screenshot.
+					wcscpy_s(fileName, sizeof(fileName) / sizeof(wchar_t), wideDirPath);
+					wcscat_s(fileName, sizeof(fileName) / sizeof(wchar_t), L"\\");
+					wcscat_s(fileName, sizeof(fileName) / sizeof(wchar_t), wideAddedFileName);
+					wcscat_s(fileName, sizeof(fileName) / sizeof(wchar_t), L".png");
+				}
+
+				else
+				{
+					printf("Error occured while converting!");
+					return 1;
+				}
+			}
+
+			else
+			{
+				printf("Error occured while converting!");
+				return 1;
+			}
 		}
 
 		// Capturing the screenshot.
