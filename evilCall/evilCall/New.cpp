@@ -14,7 +14,7 @@
 #pragma comment(lib, "Gdiplus.lib")
 
 #define DELAY_MS 2000
-#define SCREENSHOT_NUM 12
+#define SCREENSHOT_NUM 5
 
 #define FILE_NAME_INDEX 10
 
@@ -157,7 +157,7 @@ int createDir(std::filesystem::path dirFilePath)
 	return success;
 }
 
-int main()
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	int i = 0;
 
